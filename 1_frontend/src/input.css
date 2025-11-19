@@ -1,0 +1,7 @@
+/* File: 1_frontend/src/input.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* HAPUS SEMUA KODE CUSTOM LAINNYA DI BAWAH INI */
+/* Kode lama seperti .page { display: none } adalah penyebab layar kosong Anda */

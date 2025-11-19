@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA Admin Panel</title>
+    <link rel="stylesheet" href="src/output.css">
+</head>
+<body class="bg-muted/50 font-sans antriased">
+    <header class="bg-card shadow-md">
+        <div class="container mx-auto max-w-4xl p-6">
+            <h1 class="text-3xl font-bold text-primary">AURA - Admin Panel</h1>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-4xl p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <section>
+            <h2 class="text-2xl font-semibold mb-4">Daftar Keluhan Masuk</h2>
+            <div class="bg-card shadow-lg rounded-lg p-6 max-h-96 overflow-y-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left p-2">ID</th>
+                            <th class="text-left p-2">Keluhan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="complaints-table-body">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-semibold mb-4">Kelola Respon (Knowledge Base)</h2>
+            <div class="bg-card shadow-lg rounded-lg p-6">
+                <h3 class="text-lg font-semibold mb-3">Tambah Respon Baru</h3>
+                <form id="response-form" class="space-y-4">
+                    <div>
+                        <label for="keyword" class="block font-medium mb-1">Keyword</label>
+                        <input type="text" id="keyword" placeholder="cth: nik, pendaftaran, faskes" class="w-full p-3 border-2 border-input rounded-lg focus:outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label for="response-text" class="block font-medium mb-1">Teks Respon</label>
+                        <textarea id="response-text" rows="3" class="w-full p-3 border-2 border-input rounded-lg focus:outline-none focus:border-primary"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-3 px-6 bg-primary text-primary-foreground font-bold rounded-lg text-lg hover:bg-opacity-90">
+                        Simpan Respon
+                    </button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA - Mobile JKN (V4.0)</title>
+    <link rel="stylesheet" href="src/output.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="app.js" defer></script>
+    <style>
+        /* Style tambahan untuk Laporan Mind yang Rapi */
+        .prose h3 { color: #1e40af; font-size: 1.25rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+        .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .prose li { margin-bottom: 0.25rem; }
+        .prose p { margin-bottom: 1rem; line-height: 1.6; }
+        .disclaimer { background: #fff7ed; border-left: 4px solid #f97316; padding: 1rem; font-size: 0.875rem; color: #9a3412; margin-top: 2rem; }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans antialiased text-slate-900">
+
+    <header class="bg-white shadow-sm sticky top-0 z-40">
+        <div class="container mx-auto max-w-md p-4 flex items-center justify-center">
+            <img src="https://bpjs-kesehatan.go.id/user-manual-mobile-jkn/assets/images/logo_mjkn.png" alt="Mobile JKN" class="h-10 mr-3">
+            <h1 class="text-xl font-bold text-blue-800">AURA</h1>
+        </div>
+    </header>
+
+    <main class="container mx-auto max-w-md p-4 min-h-screen" id="pageContainer">
+
+        <section class="page" id="pageMain">
+            <div class="bg-blue-800 text-white rounded-2xl p-6 mb-8 shadow-lg text-center">
+                <h2 class="text-2xl font-bold mb-2">Halo, Peserta JKN!</h2>
+                <p class="opacity-90">Apa yang bisa AURA bantu hari ini?</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition cursor-pointer flex flex-col items-center border border-slate-100" data-target="pageKeluhan">
+                    <span class="text-4xl mb-3">💬</span>
+                    <span class="font-semibold text-sm">Layanan Keluhan</span>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition cursor-pointer flex flex-col items-center border border-slate-100" data-target="pageMind">
+                    <span class="text-4xl mb-3">🧠</span>
+                    <span class="font-semibold text-sm">Cek Kesehatan Jiwa</span>
+                </div>
+            </div>
+
+            <button class="w-full bg-red-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-red-700 flex items-center justify-center gap-2 animate-pulse" data-target="pageSos">
+                <span>🚨</span> SOS DARURAT
+            </button>
+
+            <div class="mt-12 text-center opacity-50 text-xs">
+                <img src="https://images.seeklogo.com/logo-png/30/1/bpjs-kesehatan-logo-png_seeklogo-306177.png" class="h-8 mx-auto mb-2 grayscale">
+                <p>© 2025 BPJS Kesehatan</p>
+                <a href="admin.html" class="underline mt-2 block">Admin Panel</a>
+            </div>
+        </section>
+
+        <section class="page hidden" id="pageKeluhan">
+            <button class="text-blue-600 font-semibold mb-4 flex items-center gap-1" data-target="pageMain">← Kembali</button>
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold">Sampaikan Keluhan</h2>
+                    <span id="cxStatus" class="text-xs px-2 py-1 bg-slate-100 rounded text-slate-500">Normal</span>
+                </div>
+                
+                <div id="adaptiveUiNotice" class="hidden bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4 text-sm text-yellow-700">
+                    <strong>Mode Sederhana Aktif:</strong> Kami menyederhanakan tampilan untuk kenyamanan Anda.
+                </div>
+
+                <textarea id="complaintForm" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-base mb-4" rows="6" placeholder="Ceritakan kendala Anda..."></textarea>
+                
+                <button id="submitComplaintButton" class="w-full bg-blue-800 text-white py-3 rounded-lg font-bold hover:bg-blue-900 transition">
+                    Kirim ke Layanan Pelanggan
+                </button>
+            </div>
+        </section>
+
+        <section class="page hidden" id="pageMind">
+            <button class="text-blue-600 font-semibold mb-4 flex items-center gap-1" data-target="pageMain">← Kembali</button>
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
+                <h2 class="text-lg font-bold mb-4 border-b pb-2">AURA-Mind</h2>
+                
+                <div id="mindStep1">
+                    <div class="text-center py-8">
+                        <p class="text-lg text-slate-600 mb-6">Anda akan menjawab <strong>beberapa pertanyaan psikologis singkat</strong> untuk membantu kami memahami kondisi Anda.</p>
+                        <button id="startScreeningButton" class="bg-blue-600 text-white px-8 py-3 rounded-full font-bold shadow hover:bg-blue-700">Mulai Skrining</button>
+                        <div id="mindLoading" class="hidden mt-4 text-slate-400 text-sm">Sedang memuat pertanyaan...</div>
+                    </div>
+                </div>
+
+                <div id="mindStep2" class="hidden space-y-4">
+                    <div id="mindQuestionsContainer" class="space-y-6"></div>
+                    <button id="submitScreeningButton" class="w-full bg-blue-800 text-white py-3 rounded-lg font-bold mt-6">Analisis Jawaban Saya</button>
+                </div>
+
+                <div id="mindStep3" class="hidden">
+                    <div id="mindResultContainer" class="prose prose-sm max-w-none text-slate-700"></div>
+                    <button id="downloadPdfButton" class="w-full border-2 border-blue-800 text-blue-800 py-3 rounded-lg font-bold mt-6 hover:bg-blue-50">
+                        📄 Download Hasil (PDF)
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <section class="page hidden" id="pageSos"></section>
+
+    </main>
+
+    <div id="cxModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all scale-95 opacity-0" id="cxModalContent">
+            <div class="bg-blue-800 p-4 text-white flex items-center gap-3">
+                <div id="cxIconLoading" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <h3 class="font-bold" id="cxModalTitle">Menghubungkan...</h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <div id="cxModalText" class="text-slate-700"></div>
+            </div>
+            <div class="p-4 bg-slate-50 text-right">
+                <button id="cxModalClose" class="text-blue-800 font-bold px-4 py-2 hover:bg-blue-100 rounded">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="sosOverlay" class="fixed inset-0 bg-red-600 z-[60] hidden flex flex-col items-center justify-center text-white p-6 text-center">
+        <h1 class="text-5xl font-black animate-pulse mb-2">SOS AKTIF</h1>
+        <p id="sosStatus" class="text-xl opacity-90 mb-8">Mendeteksi Kedaruratan...</p>
+        
+        <canvas id="audioVisualizer" class="w-full h-32 bg-black/20 rounded-xl mb-8"></canvas>
+        
+        <div id="sosResultArea" class="hidden w-full max-w-sm bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/20">
+            <div class="bg-red-800 rounded-lg p-3 mb-4 animate-pulse">
+                <p class="font-bold text-sm">AMBULANS DIKIRIM KE:</p>
+                <p id="gpsLocation" class="font-mono text-xs mt-1">Mencari GPS...</p>
+            </div>
+            <p class="font-black text-2xl mb-4">TETAP TENANG.</p>
+            
+            <div class="text-left bg-white text-slate-900 rounded-lg p-4">
+                <p class="text-xs font-bold text-slate-500 mb-2">REKOMENDASI FASKES TERDEKAT:</p>
+                <ul id="faskesList" class="text-sm space-y-2 font-semibold">
+                    </ul>
+            </div>
+        </div>
+
+        <button id="sosCloseButton" class="mt-8 border border-white/50 text-white px-6 py-2 rounded-full hover:bg-white/20 hidden">Batalkan / Tutup</button>
+    </div>
+
+</body>
+</html>

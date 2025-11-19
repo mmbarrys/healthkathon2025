@@ -4,8 +4,8 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- Inisialisasi API URL ---
-    const NODE_API_URL = 'http://localhost:3000/api/aura';
-    const NODE_DB_URL = 'http://localhost:3000/api';
+    const NODE_API_URL = 'http://127.0.0.1:3000/api/aura';
+    const NODE_DB_URL = 'http://127.0.0.1:3000/api';
 
     // --- Ambil Elemen Halaman ---
     const pageContainer = document.getElementById('pageContainer');
@@ -46,8 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const faskesList = document.getElementById('faskesList'); // Baru
     const sosCloseButton = document.getElementById('sosCloseButton');
     const canvas = document.getElementById('audioVisualizer');
-    const canvasCtx = canvas.getContext('2d');
-
+    const sosTriggerButton = document.querySelector('[data-target="pageSos"]');
+    
     // --- State Global ---
     let isSimpleMode = false; // Ganti isCXTriggered
     let isSOSRunning = false;
@@ -55,7 +55,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let audioChunks = [];
     let audioStream;
     let sosStream = null; // Stream khusus SOS
-
+    let canvasCtx = canvas ? canvas.getContext('2d') : null;
+    
+    const logError = (context, message, error) => {
+        console.error(`[AURA ERROR - ${context}] ${message}`, error || '');
+        if (typeof alert !== 'undefined') alert(`ERROR: ${context} failed. Check Console for details.`);
+    };
     // --- 1. Navigasi / UI Router ---
     
     function navigateTo(pageId) {
@@ -90,9 +95,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     allMenuButtons.forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', (e) => {
             const targetId = button.getAttribute('data-target');
-            if(targetId) navigateTo(targetId);
+            if(targetId === 'pageSos') {
+                e.preventDefault(); // Hentikan navigasi default di sini
+                AURA.Sensors.voice.start(); // Langsung picu fungsi SOS
+            } else if(targetId) {
+                navigateTo(targetId);
+            }
         });
     });
 
@@ -224,6 +234,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // SENSOR 3: AURA-SOS
             voice: {
                 start: async () => {
+                    if (isSOSRunning) return;
+                    if (!canvasCtx || !sosOverlay) {
+                        logError("SOS_INIT", "Canvas atau Overlay tidak ditemukan.", null);
+                        return;
+                    }
                     sosOverlay.classList.remove('hidden');
                     sosResultArea.classList.add('hidden');
                     sosCloseButton.classList.add('hidden');
@@ -232,6 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                         sosStream = stream;
+                        isSOSRunning = true;
                         
                         // Visualizer
                         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -391,6 +407,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if(sosTriggerButton) {
+        sosTriggerButton.addEventListener('click', (e) => {
+            // Kita mencegah navigasi default (jika ada) dan langsung memicu start recording.
+            e.preventDefault(); 
+            AURA.Sensors.voice.start(); 
+            // Karena tombol sudah ada di pageMain, kita tidak perlu memanggil navigateTo
+            // Kita biarkan navigateTo berjalan untuk memastikan navigasi ke pageSos (yang kosong) terjadi
+            navigateTo('pageSos'); 
+        });
+    }
     // AURA-SOS
     if(sosCloseButton) {
         sosCloseButton.addEventListener('click', () => {

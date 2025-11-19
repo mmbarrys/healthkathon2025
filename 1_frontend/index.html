@@ -3,147 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AURA - Mobile JKN (V4.0)</title>
+    <title>AURA - Asisten Kesehatan Jiwa</title>
     <link rel="stylesheet" href="src/output.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="app.js" defer></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Style tambahan untuk Laporan Mind yang Rapi */
-        .prose h3 { color: #1e40af; font-size: 1.25rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.5rem; }
-        .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
-        .prose li { margin-bottom: 0.25rem; }
-        .prose p { margin-bottom: 1rem; line-height: 1.6; }
-        .disclaimer { background: #fff7ed; border-left: 4px solid #f97316; padding: 1rem; font-size: 0.875rem; color: #9a3412; margin-top: 2rem; }
+        /* --- ANIMASI CUSTOM (Entrance) --- */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px); /* Mulai dari 30px di bawah */
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0); /* Ke posisi asli */
+            }
+        }
+
+        /* Kelas untuk menerapkan animasi */
+        .animate-enter {
+            opacity: 0; /* Sembunyi dulu sebelum animasi mulai */
+            animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        /* Delays untuk efek berurutan (Staggered) */
+        .delay-0 { animation-delay: 50ms; }
+        .delay-100 { animation-delay: 200ms; }
+        .delay-200 { animation-delay: 350ms; }
+        .delay-300 { animation-delay: 500ms; }
+        .delay-500 { animation-delay: 650ms; }
     </style>
 </head>
-<body class="bg-slate-50 font-sans antialiased text-slate-900">
+<body class="bg-slate-50 font-sans antialiased text-slate-900 overflow-hidden relative">
 
-    <header class="bg-white shadow-sm sticky top-0 z-40">
-        <div class="container mx-auto max-w-md p-4 flex items-center justify-center">
-            <img src="https://bpjs-kesehatan.go.id/user-manual-mobile-jkn/assets/images/logo_mjkn.png" alt="Mobile JKN" class="h-10 mr-3">
-            <h1 class="text-xl font-bold text-blue-800">AURA</h1>
-        </div>
-    </header>
+    <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div class="absolute top-20 left-10 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+        <div class="absolute bottom-20 right-10 w-96 h-96 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style="animation-delay: 2s;"></div>
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-bounce"></div>
+    </div>
 
-    <main class="container mx-auto max-w-md p-4 min-h-screen" id="pageContainer">
-
-        <section class="page" id="pageMain">
-            <div class="bg-blue-800 text-white rounded-2xl p-6 mb-8 shadow-lg text-center">
-                <h2 class="text-2xl font-bold mb-2">Halo, Peserta JKN!</h2>
-                <p class="opacity-90">Apa yang bisa AURA bantu hari ini?</p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4 mb-8">
-                <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition cursor-pointer flex flex-col items-center border border-slate-100" data-target="pageKeluhan">
-                    <span class="text-4xl mb-3">💬</span>
-                    <span class="font-semibold text-sm">Layanan Keluhan</span>
+    <section id="heroSection" class="min-h-screen flex flex-col items-center justify-center px-4 transition-all duration-500 ease-in-out">
+        <div class="relative z-10 text-center max-w-2xl">
+            
+            <div class="flex justify-center items-center gap-4 mb-8 animate-enter delay-0">
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center shadow-lg">
+                    <i data-lucide="heart" class="w-8 h-8 text-white"></i>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition cursor-pointer flex flex-col items-center border border-slate-100" data-target="pageMind">
-                    <span class="text-4xl mb-3">🧠</span>
-                    <span class="font-semibold text-sm">Cek Kesehatan Jiwa</span>
+                <div class="text-left">
+                    <h1 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-green-600">
+                        AURA
+                    </h1>
+                    <p class="text-sm text-slate-500">Adaptive User Response Agent</p>
                 </div>
             </div>
 
-            <button class="w-full bg-red-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-red-700 flex items-center justify-center gap-2 animate-pulse" data-target="pageSos">
-                <span>🚨</span> SOS DARURAT
-            </button>
-
-            <div class="mt-12 text-center opacity-50 text-xs">
-                <img src="https://images.seeklogo.com/logo-png/30/1/bpjs-kesehatan-logo-png_seeklogo-306177.png" class="h-8 mx-auto mb-2 grayscale">
-                <p>© 2025 BPJS Kesehatan</p>
-                <a href="admin.html" class="underline mt-2 block">Admin Panel</a>
+            <div class="space-y-4 mb-8 animate-enter delay-100">
+                <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 leading-tight">
+                    Asisten Kesehatan Jiwa <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-green-600">Terdepan</span>
+                </h2>
+                <p class="text-lg md:text-xl text-slate-500 max-w-xl mx-auto leading-relaxed">
+                    Teknologi AI empatik yang memahami Anda, memberikan dukungan kesehatan mental 24/7 dengan pendekatan personal.
+                </p>
             </div>
-        </section>
 
-        <section class="page hidden" id="pageKeluhan">
-            <button class="text-blue-600 font-semibold mb-4 flex items-center gap-1" data-target="pageMain">← Kembali</button>
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold">Sampaikan Keluhan</h2>
-                    <span id="cxStatus" class="text-xs px-2 py-1 bg-slate-100 rounded text-slate-500">Normal</span>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 animate-enter delay-200">
+                <div class="p-4 rounded-xl bg-white/60 backdrop-blur border border-blue-100 shadow-sm hover:shadow-md transition-transform hover:scale-105 cursor-default">
+                    <i data-lucide="smile" class="w-8 h-8 text-blue-600 mx-auto mb-2"></i>
+                    <p class="text-sm font-medium">Empati Nyata</p>
                 </div>
-                
-                <div id="adaptiveUiNotice" class="hidden bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4 text-sm text-yellow-700">
-                    <strong>Mode Sederhana Aktif:</strong> Kami menyederhanakan tampilan untuk kenyamanan Anda.
+                <div class="p-4 rounded-xl bg-white/60 backdrop-blur border border-green-100 shadow-sm hover:shadow-md transition-transform hover:scale-105 cursor-default">
+                    <i data-lucide="heart-handshake" class="w-8 h-8 text-green-600 mx-auto mb-2"></i>
+                    <p class="text-sm font-medium">Dukungan 24/7</p>
                 </div>
+                <div class="p-4 rounded-xl bg-white/60 backdrop-blur border border-blue-100 shadow-sm hover:shadow-md transition-transform hover:scale-105 cursor-default">
+                    <i data-lucide="shield-check" class="w-8 h-8 text-blue-600 mx-auto mb-2"></i>
+                    <p class="text-sm font-medium">Privasi Terjamin</p>
+                </div>
+            </div>
 
-                <textarea id="complaintForm" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-base mb-4" rows="6" placeholder="Ceritakan kendala Anda..."></textarea>
-                
-                <button id="submitComplaintButton" class="w-full bg-blue-800 text-white py-3 rounded-lg font-bold hover:bg-blue-900 transition">
-                    Kirim ke Layanan Pelanggan
+            <div class="animate-enter delay-300">
+                <button id="enterButton" class="group relative px-10 py-4 text-lg font-bold rounded-full transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-xl hover:shadow-2xl">
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-800 rounded-full opacity-100 group-hover:opacity-90 transition-opacity"></div>
+                    <span class="relative flex items-center justify-center gap-2 text-white">
+                        Masuk Sekarang
+                        <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+                    </span>
                 </button>
             </div>
-        </section>
 
-        <section class="page hidden" id="pageMind">
-            <button class="text-blue-600 font-semibold mb-4 flex items-center gap-1" data-target="pageMain">← Kembali</button>
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
-                <h2 class="text-lg font-bold mb-4 border-b pb-2">AURA-Mind</h2>
-                
-                <div id="mindStep1">
-                    <div class="text-center py-8">
-                        <p class="text-lg text-slate-600 mb-6">Anda akan menjawab <strong>beberapa pertanyaan psikologis singkat</strong> untuk membantu kami memahami kondisi Anda.</p>
-                        <button id="startScreeningButton" class="bg-blue-600 text-white px-8 py-3 rounded-full font-bold shadow hover:bg-blue-700">Mulai Skrining</button>
-                        <div id="mindLoading" class="hidden mt-4 text-slate-400 text-sm">Sedang memuat pertanyaan...</div>
-                    </div>
-                </div>
-
-                <div id="mindStep2" class="hidden space-y-4">
-                    <div id="mindQuestionsContainer" class="space-y-6"></div>
-                    <button id="submitScreeningButton" class="w-full bg-blue-800 text-white py-3 rounded-lg font-bold mt-6">Analisis Jawaban Saya</button>
-                </div>
-
-                <div id="mindStep3" class="hidden">
-                    <div id="mindResultContainer" class="prose prose-sm max-w-none text-slate-700"></div>
-                    <button id="downloadPdfButton" class="w-full border-2 border-blue-800 text-blue-800 py-3 rounded-lg font-bold mt-6 hover:bg-blue-50">
-                        📄 Download Hasil (PDF)
-                    </button>
-                </div>
-            </div>
-        </section>
-        
-        <section class="page hidden" id="pageSos"></section>
-
-    </main>
-
-    <div id="cxModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all scale-95 opacity-0" id="cxModalContent">
-            <div class="bg-blue-800 p-4 text-white flex items-center gap-3">
-                <div id="cxIconLoading" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                <h3 class="font-bold" id="cxModalTitle">Menghubungkan...</h3>
-            </div>
-            <div class="p-6 space-y-4">
-                <div id="cxModalText" class="text-slate-700"></div>
-            </div>
-            <div class="p-4 bg-slate-50 text-right">
-                <button id="cxModalClose" class="text-blue-800 font-bold px-4 py-2 hover:bg-blue-100 rounded">Tutup</button>
-            </div>
+            <p class="mt-8 text-sm text-slate-400 animate-enter delay-500">
+                © 2025 BPJS Kesehatan - Komitmen untuk Kesehatan Anda
+            </p>
         </div>
-    </div>
+    </section>
 
-    <div id="sosOverlay" class="fixed inset-0 bg-red-600 z-[60] hidden flex flex-col items-center justify-center text-white p-6 text-center">
-        <h1 class="text-5xl font-black animate-pulse mb-2">SOS AKTIF</h1>
-        <p id="sosStatus" class="text-xl opacity-90 mb-8">Mendeteksi Kedaruratan...</p>
+    <section id="loginSection" class="fixed inset-0 z-50 hidden flex flex-col items-center justify-center px-4 bg-white/30 backdrop-blur-sm transition-opacity duration-500 opacity-0">
         
-        <canvas id="audioVisualizer" class="w-full h-32 bg-black/20 rounded-xl mb-8"></canvas>
-        
-        <div id="sosResultArea" class="hidden w-full max-w-sm bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/20">
-            <div class="bg-red-800 rounded-lg p-3 mb-4 animate-pulse">
-                <p class="font-bold text-sm">AMBULANS DIKIRIM KE:</p>
-                <p id="gpsLocation" class="font-mono text-xs mt-1">Mencari GPS...</p>
-            </div>
-            <p class="font-black text-2xl mb-4">TETAP TENANG.</p>
+        <div class="w-full max-w-md relative transform transition-all duration-500 scale-95" id="loginCard">
             
-            <div class="text-left bg-white text-slate-900 rounded-lg p-4">
-                <p class="text-xs font-bold text-slate-500 mb-2">REKOMENDASI FASKES TERDEKAT:</p>
-                <ul id="faskesList" class="text-sm space-y-2 font-semibold">
-                    </ul>
+            <button id="backButton" class="absolute -top-12 left-0 flex items-center gap-2 text-slate-500 hover:text-blue-700 transition-colors group font-medium">
+                <i data-lucide="arrow-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform"></i>
+                Kembali
+            </button>
+
+            <div class="bg-white rounded-2xl shadow-2xl border border-blue-100 p-8 md:p-10">
+                <div class="text-center mb-8">
+                    <div class="flex justify-center mb-4">
+                        <div class="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center shadow-lg">
+                            <span class="text-xl font-bold text-white">A</span>
+                        </div>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900 mb-2">Selamat Datang</h2>
+                    <p class="text-slate-500">Masuk ke AURA dengan kredensial Anda</p>
+                </div>
+
+                <form id="loginForm" class="space-y-5">
+                    <div class="space-y-1">
+                        <label class="block text-sm font-semibold text-slate-700">NIK / Username</label>
+                        <input type="text" id="username" class="w-full px-4 py-3 rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:border-blue-400" placeholder="Masukkan NIK atau admin">
+                    </div>
+
+                    <div class="space-y-1 relative">
+                        <label class="block text-sm font-semibold text-slate-700">Password</label>
+                        <input type="password" id="password" class="w-full px-4 py-3 rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:border-blue-400 pr-10" placeholder="••••••••">
+                        <button type="button" id="togglePassword" class="absolute right-3 top-8 text-slate-400 hover:text-blue-600 transition">
+                            <i data-lucide="eye" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <div id="loginError" class="hidden bg-red-50 border border-red-200 text-red-600 text-sm font-medium p-3 rounded-lg flex items-center gap-2">
+                        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                        <span>Kredensial tidak valid.</span>
+                    </div>
+
+                    <button type="submit" id="loginSubmitBtn" class="w-full py-3 px-4 rounded-lg bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white font-bold shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-95 flex justify-center items-center gap-2">
+                        <span>Masuk Aplikasi</span>
+                        <div id="loginSpinner" class="hidden w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    </button>
+                </form>
+
+                <div class="mt-6 p-3 rounded-lg bg-blue-50 border border-blue-100 text-center">
+                    <p class="text-xs text-blue-800">
+                        Demo: <span class="font-bold">admin</span> / <span class="font-bold">admin</span> atau <span class="font-bold">123456</span> / <span class="font-bold">user123</span>
+                    </p>
+                </div>
             </div>
         </div>
+    </section>
 
-        <button id="sosCloseButton" class="mt-8 border border-white/50 text-white px-6 py-2 rounded-full hover:bg-white/20 hidden">Batalkan / Tutup</button>
-    </div>
-
+    <script src="landing.js"></script>
+    <script>
+        // Inisialisasi Lucide Icons
+        lucide.createIcons();
+    </script>
 </body>
 </html>

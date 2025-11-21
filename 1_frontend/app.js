@@ -1,32 +1,39 @@
-// File: 1_frontend/app.js
-// Versi Final AURA 4.0 (Silent CX, GPS SOS, & Tailored UI)
+// File: 1_frontend/app.js (V5.0 - Silent SOS & Emergency Tracking)
 
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. URL Port Forwarding
+    const TUNNEL_URL = 'https://7rtmjns0-3000.asse.devtunnels.ms'; 
 
-    // --- Inisialisasi API URL ---
-    const NODE_API_URL = 'http://127.0.0.1:3000/api/aura';
-    const NODE_DB_URL = 'http://127.0.0.1:3000/api';
+    // 2. Logika Deteksi Otomatis
+    // Jika browser dibuka di "127.0.0.1" atau "localhost", gunakan Local Backend.
+    // Jika tidak (misal dibuka dari HP lewat tunnel), gunakan Tunnel URL.
+    const isLocalhost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+    
+    const BASE_URL = isLocalhost ? 'http://127.0.0.1:3000' : TUNNEL_URL;
 
-    // --- Ambil Elemen Halaman ---
-    const pageContainer = document.getElementById('pageContainer');
+    // 3. Set API URL Final
+    const NODE_API_URL = `${BASE_URL}/api/aura`;
+    const NODE_DB_URL = `${BASE_URL}/api`;
+
+    console.log(`[AURA] Mode: ${isLocalhost ? 'LOKAL' : 'PUBLIK/TUNNEL'}`);
+    console.log(`[AURA] Target API: ${NODE_API_URL}`);
+
+    // --- ELEMENTS ---
     const allPages = document.querySelectorAll('.page');
     const allMenuButtons = document.querySelectorAll('[data-target]');
-
-    // --- Elemen Fitur 1: Keluhan (AURA-CX) ---
+    
+    // CX & Mind Elements (Tetap sama)
     const complaintForm = document.getElementById('complaintForm');
     const submitComplaintButton = document.getElementById('submitComplaintButton');
     const cxStatus = document.getElementById('cxStatus');
-    const adaptiveUiNotice = document.getElementById('adaptiveUiNotice'); // Baru
-    
-    // Modal CS (Struktur Baru)
+    const adaptiveUiNotice = document.getElementById('adaptiveUiNotice'); 
     const cxModal = document.getElementById('cxModal');
-    const cxModalContent = document.getElementById('cxModalContent'); // Baru
+    const cxModalContent = document.getElementById('cxModalContent'); 
     const cxModalTitle = document.getElementById('cxModalTitle');
     const cxModalText = document.getElementById('cxModalText');
     const cxModalClose = document.getElementById('cxModalClose');
     const cxIconLoading = document.getElementById('cxIconLoading');
     
-    // --- Elemen Fitur 2: Skrining (AURA-Mind) ---
     const startScreeningButton = document.getElementById('startScreeningButton');
     const submitScreeningButton = document.getElementById('submitScreeningButton');
     const downloadPdfButton = document.getElementById('downloadPdfButton');
@@ -36,88 +43,83 @@ document.addEventListener('DOMContentLoaded', () => {
     const mindStep3 = document.getElementById('mindStep3');
     const mindQuestionsContainer = document.getElementById('mindQuestionsContainer');
     const mindResultContainer = document.getElementById('mindResultContainer');
-    let mindQuestions = []; 
+    const logoutButton = document.getElementById('logoutButton');
 
-    // --- Elemen Fitur 3: SOS (AURA-SOS) ---
+    // SOS Elements (Updated V5)
     const sosOverlay = document.getElementById('sosOverlay');
-    const sosStatus = document.getElementById('sosStatus'); // Ganti sosStatusText
-    const sosResultArea = document.getElementById('sosResultArea'); // Baru
-    const gpsLocation = document.getElementById('gpsLocation'); // Baru
-    const faskesList = document.getElementById('faskesList'); // Baru
+    const sosStatus = document.getElementById('sosStatus');
+    const sosResultArea = document.getElementById('sosResultArea');
+    const sosVisualizerContainer = document.getElementById('sosVisualizerContainer');
+    const sosProcessList = document.getElementById('sosProcessList');
+    const silentSosButton = document.getElementById('silentSosButton'); // Baru
+    const sosCancelButton = document.getElementById('sosCancelButton'); // Baru
+    const sosTimerBar = document.getElementById('sosTimerBar'); // Baru
+    const gpsLocation = document.getElementById('gpsLocation');
+    const faskesList = document.getElementById('faskesList');
     const sosCloseButton = document.getElementById('sosCloseButton');
     const canvas = document.getElementById('audioVisualizer');
-    const sosTriggerButton = document.querySelector('[data-target="pageSos"]');
     
-    // --- State Global ---
-    let isSimpleMode = false; // Ganti isCXTriggered
+    // STATE
+    let mindQuestions = []; 
+    let isSimpleMode = false;
     let isSOSRunning = false;
-    let mediaRecorder;
-    let audioChunks = [];
-    let audioStream;
-    let sosStream = null; // Stream khusus SOS
+    let mediaRecorder = null;
+    let sosStream = null;
     let canvasCtx = canvas ? canvas.getContext('2d') : null;
-    
-    const logError = (context, message, error) => {
-        console.error(`[AURA ERROR - ${context}] ${message}`, error || '');
-        if (typeof alert !== 'undefined') alert(`ERROR: ${context} failed. Check Console for details.`);
-    };
-    // --- 1. Navigasi / UI Router ---
-    
+
+    // --- HELPERS ---
     function navigateTo(pageId) {
-        allPages.forEach(page => page.classList.add('hidden')); // Pakai class hidden (Tailwind)
+        allPages.forEach(page => page.classList.add('hidden'));
+        const target = document.getElementById(pageId);
+        if (target) target.classList.remove('hidden');
         
-        const targetPage = document.getElementById(pageId);
-        if (targetPage) {
-            targetPage.classList.remove('hidden');
-        }
-        
-        // Reset State CX saat masuk halaman keluhan
         if (pageId === 'pageKeluhan') {
             isSimpleMode = false;
             if(adaptiveUiNotice) adaptiveUiNotice.classList.add('hidden');
-            if(cxStatus) {
-                cxStatus.textContent = "Normal";
-                cxStatus.className = "text-xs px-2 py-1 bg-slate-100 rounded text-slate-500";
-            }
+            if(cxStatus) { cxStatus.textContent = "Normal"; cxStatus.className = "text-xs px-2 py-1 bg-slate-100 rounded text-slate-500 font-medium"; }
             if(complaintForm) complaintForm.value = '';
-        } 
-        // Reset State Mind
-        else if (pageId === 'pageMind') {
+        } else if (pageId === 'pageMind') {
             mindStep1.classList.remove('hidden');
             mindStep2.classList.add('hidden');
             mindStep3.classList.add('hidden');
-            mindQuestionsContainer.innerHTML = '';
-            mindResultContainer.innerHTML = '';
-            startScreeningButton.classList.remove('hidden'); // Pastikan tombol muncul
-            startScreeningButton.disabled = false;
-            mindLoading.classList.add('hidden');
+            if(mindQuestionsContainer) mindQuestionsContainer.innerHTML = '';
+            if(mindResultContainer) mindResultContainer.innerHTML = '';
+            if(startScreeningButton) startScreeningButton.classList.remove('hidden');
+            if(startScreeningButton) startScreeningButton.disabled = false;
+            if(mindLoading) mindLoading.classList.add('hidden');
         }
+        if(window.lucide) window.lucide.createIcons();
     }
 
-    allMenuButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            const targetId = button.getAttribute('data-target');
-            if(targetId === 'pageSos') {
-                e.preventDefault(); // Hentikan navigasi default di sini
-                AURA.Sensors.voice.start(); // Langsung picu fungsi SOS
-            } else if(targetId) {
-                navigateTo(targetId);
+    const highlightStep = (stepNum) => {
+        for(let i=1; i<=4; i++) {
+            const el = document.getElementById(`step${i}`);
+            if(el) {
+                const badge = el.querySelector('div');
+                if(i < stepNum) { // Completed
+                    el.classList.remove('opacity-50'); el.classList.add('opacity-100', 'text-green-300');
+                    badge.innerHTML = '✓'; badge.classList.add('bg-green-500', 'border-green-500');
+                } else if (i === stepNum) { // Active
+                    el.classList.remove('opacity-50'); el.classList.add('opacity-100', 'font-bold', 'scale-105');
+                    badge.classList.add('bg-white', 'text-red-600');
+                    badge.innerHTML = i;
+                } else { // Pending
+                    el.classList.add('opacity-50'); el.classList.remove('opacity-100', 'font-bold', 'scale-105');
+                    badge.className = "w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold shrink-0";
+                    badge.innerHTML = i;
+                }
             }
-        });
-    });
+        }
+    };
 
-    // --- 2. Modul AURA (Namespace Global) ---
-    
+    // --- MAIN MODULE ---
     const AURA = {
-        // --- UI Action Engine ---
         UI: {
-            showCXModalLoading: (title = "Menghubungkan...", text = "Sedang menganalisis...") => {
+            showCXModalLoading: (title, text) => {
                 cxModalTitle.textContent = title;
                 cxModalText.innerHTML = `<p class='text-center text-slate-500'>${text}</p>`;
                 cxIconLoading.style.display = 'block';
                 cxModal.classList.remove('hidden');
-                
-                // Animasi Masuk
                 setTimeout(() => {
                     cxModalContent.classList.remove('scale-95', 'opacity-0');
                     cxModalContent.classList.add('scale-100', 'opacity-100');
@@ -127,12 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 cxModalTitle.textContent = "Layanan Pelanggan AURA";
                 cxIconLoading.style.display = 'none';
                 cxModalText.innerHTML = `
-                    <div class="bg-blue-50 p-3 rounded-lg text-blue-800 text-sm font-medium mb-3">
-                        "${deescalation}"
-                    </div>
-                    <div class="prose text-sm text-slate-700">
-                        <p>${solution}</p>
-                    </div>
+                    <div class="bg-blue-50 p-3 rounded-lg text-blue-800 text-sm font-medium mb-3 border border-blue-100">"${deescalation}"</div>
+                    <div class="prose text-sm text-slate-700"><p>${solution}</p></div>
                 `;
             },
             hideCXModal: () => {
@@ -142,16 +140,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
 
-        // --- Sensor Engine ---
         Sensors: {
-            // SENSOR 1: AURA-CX (Silent Adaptive UI)
             keystroke: {
                 lastTime: 0,
                 check: (e) => {
                     if(isSimpleMode) return;
-                    
                     const now = performance.now();
-                    // Deteksi Flight Time (Jeda panjang > 800ms saat mengetik = bingung)
                     if(e.type === 'keydown') {
                         if(AURA.Sensors.keystroke.lastTime > 0 && (now - AURA.Sensors.keystroke.lastTime) > 800 && complaintForm.value.length > 5) {
                             AURA.Sensors.keystroke.triggerSimpleMode();
@@ -161,42 +155,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 triggerSimpleMode: () => {
                     isSimpleMode = true;
-                    console.log("[AURA-CX] Mode Sederhana Diaktifkan (Silent)");
-                    
-                    // Update UI secara halus
                     cxStatus.textContent = "Mode Sederhana";
-                    cxStatus.className = "text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded";
+                    cxStatus.className = "text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded font-bold";
                     if(adaptiveUiNotice) adaptiveUiNotice.classList.remove('hidden');
-                    
-                    // (Opsional) Sembunyikan elemen yang tidak penting
-                    // document.querySelectorAll('.complex-ui').forEach(el => el.classList.add('hidden'));
+                    AURA.UI.showCXModalLoading("AURA Mendeteksi Kesulitan", "Kami menyederhanakan tampilan untuk membantu Anda.");
+                    setTimeout(AURA.UI.hideCXModal, 2500);
                 }
             },
 
-            // SENSOR 2: AURA-Mind
             mind: {
                 start: async () => {
                     startScreeningButton.classList.add('hidden');
                     mindLoading.classList.remove('hidden');
-
                     try {
                         const res = await fetch(`${NODE_API_URL}/mind`, {
                             method: 'POST', headers: {'Content-Type':'application/json'},
                             body: JSON.stringify({ step: 'get_questions' })
                         });
                         const data = await res.json();
-                        
                         mindQuestions = data.questions;
                         mindQuestionsContainer.innerHTML = '';
                         mindQuestions.forEach((q, i) => {
-                            mindQuestionsContainer.innerHTML += `
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-2">${i+1}. ${q}</label>
-                                    <input type="text" class="mind-ans w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Jawaban Anda...">
-                                </div>
-                            `;
+                            mindQuestionsContainer.innerHTML += `<div><label class="block text-sm font-bold text-slate-700 mb-2">${i+1}. ${q}</label><input type="text" class="mind-ans w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50 focus:bg-white transition" placeholder="Jawaban Anda..."></div>`;
                         });
-
                         mindStep1.classList.add('hidden');
                         mindStep2.classList.remove('hidden');
                     } catch (e) {
@@ -207,15 +188,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 submit: async () => {
                     const inputs = document.querySelectorAll('.mind-ans');
-                    // Validasi sederhana
                     let allFilled = true;
                     inputs.forEach(i => { if(!i.value) allFilled = false; });
                     if(!allFilled) return alert("Mohon jawab semua pertanyaan.");
-
                     const answers = Array.from(inputs).map((inp, i) => ({ q: mindQuestions[i], a: inp.value }));
                     
                     mindStep2.classList.add('hidden');
-                    mindResultContainer.innerHTML = "<div class='flex flex-col items-center py-8'><div class='w-8 h-8 border-4 border-blue-200 border-t-blue-800 rounded-full animate-spin mb-4'></div><p class='text-slate-500'>AI sedang menganalisis jawaban Anda...</p></div>";
+                    mindResultContainer.innerHTML = "<div class='flex flex-col items-center py-12'><div class='w-10 h-10 border-4 border-blue-200 border-t-blue-800 rounded-full animate-spin mb-4'></div><p class='text-slate-500 font-medium'>AI sedang menganalisis jawaban Anda...</p></div>";
                     mindStep3.classList.remove('hidden');
 
                     try {
@@ -231,18 +210,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
 
-            // SENSOR 3: AURA-SOS
             voice: {
                 start: async () => {
                     if (isSOSRunning) return;
-                    if (!canvasCtx || !sosOverlay) {
-                        logError("SOS_INIT", "Canvas atau Overlay tidak ditemukan.", null);
-                        return;
-                    }
+                    if (!canvasCtx || !sosOverlay) return alert("System Error: Canvas not ready.");
+                    
+                    // UI Reset
                     sosOverlay.classList.remove('hidden');
                     sosResultArea.classList.add('hidden');
-                    sosCloseButton.classList.add('hidden');
-                    sosStatus.textContent = "Mendeteksi Kedaruratan...";
+                    sosVisualizerContainer.classList.remove('hidden');
+                    sosProcessList.classList.add('hidden'); // Sembunyi dulu
+                    silentSosButton.classList.remove('hidden'); // Tampilkan tombol silent
+                    sosCancelButton.classList.remove('hidden');
+                    
+                    sosStatus.classList.remove('hidden');
+                    sosStatus.textContent = "MENDETEKSI SUARA...";
+                    sosTimerBar.style.transform = 'scaleX(1)'; // Reset bar full
 
                     try {
                         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -262,170 +245,220 @@ document.addEventListener('DOMContentLoaded', () => {
                             if(!sosStream) return;
                             requestAnimationFrame(draw);
                             analyser.getByteFrequencyData(dataArray);
-                            canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Trail effect
-                            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-                            
+                            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
                             const barWidth = (canvas.width / bufferLength) * 2.5;
                             let x = 0;
                             for(let i=0; i<bufferLength; i++) {
                                 const barHeight = dataArray[i] / 2;
-                                canvasCtx.fillStyle = `rgba(255,255,255, ${barHeight/100 + 0.2})`;
+                                canvasCtx.fillStyle = `rgba(255,255,255, ${barHeight/100 + 0.5})`;
                                 canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
                                 x += barWidth + 1;
                             }
                         };
                         draw();
 
-                        // Recording
+                        // Recording & Timer
                         mediaRecorder = new MediaRecorder(stream);
                         audioChunks = [];
                         mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                        
+                        // Timer Animation
+                        setTimeout(() => { if(isSOSRunning) sosTimerBar.style.transform = 'scaleX(0)'; }, 100);
+
                         mediaRecorder.onstop = async () => {
+                            // Jika dihentikan manual oleh Silent SOS, jangan proses suara
+                            if (!isSOSRunning) return; 
+
                             const blob = new Blob(audioChunks, { type: 'audio/webm' });
                             const formData = new FormData();
                             formData.append('audio', blob);
-                            
-                            sosStatus.textContent = "Menganalisis Tingkat Bahaya...";
                             
                             try {
                                 const res = await fetch(`${NODE_API_URL}/analyze/voice`, { method: 'POST', body: formData });
                                 const data = await res.json();
                                 
                                 if(data.is_panic) {
-                                    AURA.Sensors.voice.triggerEmergency();
+                                    // JIKA PANIK: JALANKAN SEQUENCE
+                                    AURA.Sensors.voice.triggerEmergencySequence();
                                 } else {
-                                    sosStatus.textContent = "Situasi Terkendali. Bantuan Dibatalkan.";
-                                    sosCloseButton.classList.remove('hidden');
-                                    sosCloseButton.textContent = "Tutup";
+                                    // TIDAK PANIK
+                                    silentSosButton.classList.add('hidden');
+                                    sosVisualizerContainer.classList.add('hidden');
+                                    sosStatus.innerHTML = "<span class='text-green-300 text-3xl'>SITUASI AMAN</span>";
+                                    sosResultArea.classList.remove('hidden');
+                                    sosResultArea.innerHTML = `
+                                        <div class="p-6 text-center">
+                                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <i data-lucide="check" class="w-8 h-8 text-green-600"></i>
+                                            </div>
+                                            <h3 class="font-bold text-slate-800 mb-2">Tidak Ada Kedaruratan</h3>
+                                            <p class="text-sm text-slate-500">Analisis suara menunjukkan kondisi tenang.</p>
+                                            <button id="sosCloseSafe" class="mt-6 w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-lg">Tutup</button>
+                                        </div>
+                                    `;
+                                    if(window.lucide) window.lucide.createIcons();
+                                    document.getElementById('sosCloseSafe').addEventListener('click', AURA.Sensors.voice.stop);
                                 }
                             } catch(e) {
-                                sosStatus.textContent = "Gagal terhubung ke server.";
-                                sosCloseButton.classList.remove('hidden');
+                                alert("Gagal terhubung ke server: " + e);
+                                AURA.Sensors.voice.stop();
                             }
-                            
-                            if(sosStream) sosStream.getTracks().forEach(t => t.stop());
-                            sosStream = null;
                         };
 
                         mediaRecorder.start();
-                        setTimeout(() => mediaRecorder.stop(), 3000); // Rekam 3 detik
+                        // Auto stop setelah 3 detik
+                        setTimeout(() => {
+                            if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+                        }, 3000); 
 
                     } catch (err) {
-                        alert("Gagal akses mikrofon: " + err);
-                        sosOverlay.classList.add('hidden');
+                        alert("Akses mikrofon ditolak.");
+                        AURA.Sensors.voice.stop();
                     }
                 },
-                triggerEmergency: () => {
-                    sosStatus.textContent = "PANIK TERDETEKSI!";
-                    sosResultArea.classList.remove('hidden');
+                
+                triggerEmergencySequence: () => {
+                    // Reset UI for Sequence
+                    isSOSRunning = false; // Stop voice logic
+                    sosVisualizerContainer.classList.add('hidden');
+                    silentSosButton.classList.add('hidden');
+                    sosCancelButton.classList.add('hidden');
+                    sosProcessList.classList.remove('hidden');
                     
-                    // Get GPS
-                    if(navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition((pos) => {
-                            const { latitude, longitude } = pos.coords;
-                            gpsLocation.textContent = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-                        }, () => {
-                            gpsLocation.textContent = "Lokasi Tidak Dikenal";
-                        });
-                    } else {
-                        gpsLocation.textContent = "GPS Tidak Aktif";
-                    }
+                    // STEP 1: Aktivasi
+                    highlightStep(1);
+                    sosStatus.textContent = "MENGAKTIFKAN PROTOKOL DARURAT...";
 
-                    // Mock Faskes
-                    const MOCK_FASKES = [
-                        { name: "RSUD Dr. Soetomo", dist: "1.2 km" },
-                        { name: "Puskesmas Ketabang", dist: "0.5 km" },
-                        { name: "Klinik Pratama Sehat", dist: "0.8 km" }
-                    ];
-                    
-                    faskesList.innerHTML = "";
-                    MOCK_FASKES.forEach(f => {
-                        faskesList.innerHTML += `<li class="flex justify-between border-b border-slate-200 pb-1 last:border-0"><span>${f.name}</span><span class="text-blue-600">${f.dist}</span></li>`;
-                    });
+                    setTimeout(() => {
+                        // STEP 2: GPS
+                        highlightStep(2);
+                        sosStatus.textContent = "MELACAK POSISI GPS...";
+                        
+                        if(navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition((pos) => {
+                                const { latitude, longitude } = pos.coords;
+                                if(gpsLocation) gpsLocation.textContent = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+                            }, () => {
+                                if(gpsLocation) gpsLocation.textContent = "-7.2575, 112.7521 (Est)"; // Mock
+                            });
+                        }
 
-                    sosCloseButton.classList.remove('hidden');
-                    sosCloseButton.textContent = "Ambulans Tiba - Tutup";
+                        setTimeout(() => {
+                            // STEP 3: Connecting
+                            highlightStep(3);
+                            sosStatus.textContent = "MENGHUBUNGI 119...";
+
+                            setTimeout(() => {
+                                // STEP 4: Dispatch
+                                highlightStep(4);
+                                sosStatus.textContent = "DATA TERKIRIM!";
+
+                                setTimeout(() => {
+                                    // FINAL: Show Result
+                                    sosProcessList.classList.add('hidden');
+                                    sosStatus.classList.add('hidden');
+                                    sosResultArea.classList.remove('hidden');
+                                    
+                                    const MOCK_FASKES = [
+                                        { name: "RSUD Dr. Soetomo", dist: "1.2 km", time: "5 min" },
+                                        { name: "Puskesmas Ketabang", dist: "0.5 km", time: "2 min" },
+                                        { name: "Klinik Pratama Sehat", dist: "0.8 km", time: "4 min" }
+                                    ];
+                                    faskesList.innerHTML = "";
+                                    MOCK_FASKES.forEach(f => {
+                                        faskesList.innerHTML += `
+                                            <li class="flex justify-between items-center bg-slate-50 p-3 rounded border border-slate-100">
+                                                <div>
+                                                    <span class="block font-bold text-slate-700 text-xs">${f.name}</span>
+                                                    <span class="text-xs text-slate-500">Jarak: ${f.dist}</span>
+                                                </div>
+                                                <span class="text-green-600 font-bold text-xs bg-green-50 px-2 py-1 rounded">${f.time}</span>
+                                            </li>
+                                        `;
+                                    });
+                                    
+                                    if(window.lucide) window.lucide.createIcons();
+                                }, 1500);
+                            }, 1500);
+                        }, 1500);
+                    }, 1000);
+                },
+
+                stop: () => {
+                    sosOverlay.classList.add('hidden');
+                    if(sosStream) sosStream.getTracks().forEach(t => t.stop());
+                    if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+                    isSOSRunning = false;
+                    sosStream = null;
+                    navigateTo('pageDashboard'); 
                 }
             }
         }
     };
 
-    // --- 3. EVENT LISTENERS ---
+    // --- EVENT LISTENERS ---
+    allMenuButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetId = button.getAttribute('data-target');
+            if(targetId) navigateTo(targetId);
+        });
+    });
 
-    // AURA-CX
-    if(complaintForm) {
-        complaintForm.addEventListener('keydown', AURA.Sensors.keystroke.check);
+    const sosTrigger = document.querySelector('[data-target="pageSos"]');
+    if(sosTrigger) {
+        sosTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            AURA.Sensors.voice.start();
+        });
     }
     
+    // Silent SOS Button Listener (NEW)
+    if(silentSosButton) {
+        silentSosButton.addEventListener('click', () => {
+            console.log("[SOS] Silent Button Clicked. Triggering Emergency...");
+            // Hentikan perekaman suara
+            if(mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            // Langsung lompat ke sequence darurat
+            AURA.Sensors.voice.triggerEmergencySequence();
+        });
+    }
+    
+    if(sosCancelButton) {
+        sosCancelButton.addEventListener('click', AURA.Sensors.voice.stop);
+    }
+
     if(submitComplaintButton) {
         submitComplaintButton.addEventListener('click', async () => {
             const text = complaintForm.value;
-            if(text.length < 5) return alert("Mohon lengkapi keluhan Anda.");
-
-            AURA.UI.showCXModalLoading();
-
-            // 1. Simpan DB
+            if(text.length < 5) return alert("Mohon lengkapi.");
+            AURA.UI.showCXModalLoading("Menganalisis...", "Mohon tunggu sebentar...");
             try {
-                await fetch(`${NODE_DB_URL}/complaints`, {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ complaintText: text })
-                });
-            } catch(e) { console.error(e); }
-
-            // 2. Panggil AI
-            try {
-                const res = await fetch(`${NODE_API_URL}/trigger/cx`, {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ complaintText: text })
-                });
+                await fetch(`${NODE_DB_URL}/complaints`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ complaintText: text }) });
+                const res = await fetch(`${NODE_API_URL}/trigger/cx`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ complaintText: text }) });
                 const data = await res.json();
                 AURA.UI.showCXIntervention(data.deescalation, data.solution);
             } catch(e) {
-                AURA.UI.showCXIntervention("Maaf, terjadi kesalahan.", "Silakan hubungi 165.");
+                AURA.UI.showCXIntervention("Error", "Gagal terhubung.");
             }
         });
     }
 
-    if(cxModalClose) {
-        cxModalClose.addEventListener('click', AURA.UI.hideCXModal);
-    }
-
-    // AURA-Mind
+    if(complaintForm) complaintForm.addEventListener('keydown', AURA.Sensors.keystroke.check);
+    if(cxModalClose) cxModalClose.addEventListener('click', AURA.UI.hideCXModal);
     if(startScreeningButton) startScreeningButton.addEventListener('click', AURA.Sensors.mind.start);
     if(submitScreeningButton) submitScreeningButton.addEventListener('click', AURA.Sensors.mind.submit);
+    if(downloadPdfButton) downloadPdfButton.addEventListener('click', () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.html(document.getElementById('mindResultContainer'), { callback: function(doc){ doc.save('Laporan.pdf'); }, x: 10, y: 10, width: 180, windowWidth: 650 });
+    });
     
-    if(downloadPdfButton) {
-        downloadPdfButton.addEventListener('click', () => {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const element = document.getElementById('mindResultContainer');
-            
-            doc.html(element, {
-                callback: function(doc) { doc.save('Laporan-AURA-Mind.pdf'); },
-                x: 15, y: 15, width: 170, windowWidth: 650
-            });
-        });
-    }
-
-    if(sosTriggerButton) {
-        sosTriggerButton.addEventListener('click', (e) => {
-            // Kita mencegah navigasi default (jika ada) dan langsung memicu start recording.
-            e.preventDefault(); 
-            AURA.Sensors.voice.start(); 
-            // Karena tombol sudah ada di pageMain, kita tidak perlu memanggil navigateTo
-            // Kita biarkan navigateTo berjalan untuk memastikan navigasi ke pageSos (yang kosong) terjadi
-            navigateTo('pageSos'); 
-        });
-    }
-    // AURA-SOS
-    if(sosCloseButton) {
-        sosCloseButton.addEventListener('click', () => {
-            sosOverlay.classList.add('hidden');
-            if(sosStream) sosStream.getTracks().forEach(t => t.stop());
-            navigateTo('pageMain');
-        });
-    }
+    if(sosCloseButton) sosCloseButton.addEventListener('click', AURA.Sensors.voice.stop);
+    if(logoutButton) logoutButton.addEventListener('click', () => window.location.href = 'index.html');
 
     // Init
-    navigateTo('pageMain');
+    if(window.lucide) window.lucide.createIcons();
+    navigateTo('pageDashboard');
 });

@@ -3,7 +3,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./index.html", // Memberi tahu Tailwind untuk memindai file HTML ini
+    "./index.html",
+    "./dashboard.html",
+    "./admin.html", // Memberi tahu Tailwind untuk memindai file HTML ini
   ],
   theme: {
     extend: {

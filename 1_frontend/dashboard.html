@@ -3,18 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AURA - Mobile JKN (V4.0)</title>
+    <title>Dashboard - AURA Mobile JKN</title>
     <link rel="stylesheet" href="src/output.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="app.js" defer></script>
     <style>
-        /* Style tambahan untuk Laporan Mind yang Rapi */
         .prose h3 { color: #1e40af; font-size: 1.25rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.5rem; }
         .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
         .prose li { margin-bottom: 0.25rem; }
         .prose p { margin-bottom: 1rem; line-height: 1.6; }
-        .disclaimer { background: #fff7ed; border-left: 4px solid #f97316; padding: 1rem; font-size: 0.875rem; color: #9a3412; margin-top: 2rem; }
+        
+        /* Animasi Radar untuk SOS */
+        @keyframes radar-ping {
+            0% { transform: scale(1); opacity: 1; }
+            75% { transform: scale(2); opacity: 0; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        .animate-radar {
+            position: relative;
+        }
+        .animate-radar::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            animation: radar-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
     </style>
 </head>
 <body class="bg-slate-50 font-sans antialiased text-slate-900">
@@ -25,82 +42,115 @@
                 <img src="https://bpjs-kesehatan.go.id/user-manual-mobile-jkn/assets/images/logo_mjkn.png" alt="Mobile JKN" class="h-8 mr-2">
                 <h1 class="text-lg font-bold text-blue-800">AURA</h1>
             </div>
-            <a href="index.html" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm font-bold">Logout</a>
-            
+            <button id="logoutButton" class="text-xs font-semibold text-red-500 hover:text-red-700 border border-red-100 bg-red-50 px-3 py-1 rounded-full transition">
+                Keluar
+            </button>
         </div>
     </header>
 
-    <main class="container mx-auto max-w-md p-4 min-h-screen" id="pageContainer">
+    <main class="container mx-auto max-w-md p-4 min-h-screen relative" id="pageContainer">
 
-        <section class="page" id="pageMain">
-            <div class="bg-blue-800 text-white rounded-2xl p-6 mb-8 shadow-lg text-center">
-                <h2 class="text-2xl font-bold mb-2">Halo, Peserta JKN!</h2>
-                <p class="opacity-90">Apa yang bisa AURA bantu hari ini?</p>
+        <section class="page" id="pageDashboard">
+            <div class="bg-blue-800 text-white rounded-2xl p-6 mb-8 shadow-lg text-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 to-transparent pointer-events-none"></div>
+                <h2 class="text-2xl font-bold mb-2 relative z-10">Halo, Peserta JKN!</h2>
+                <p class="opacity-90 relative z-10 text-sm">Kesehatan mental Anda adalah prioritas kami.</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4 mb-8">
-                <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition cursor-pointer flex flex-col items-center border border-slate-100" data-target="pageKeluhan">
-                    <span class="text-4xl mb-3">💬</span>
-                    <span class="font-semibold text-sm">Layanan Keluhan</span>
+                <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition cursor-pointer flex flex-col items-center border border-slate-100 group" data-target="pageKeluhan">
+                    <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-blue-100 transition">
+                        <i data-lucide="message-square" class="text-blue-600 w-6 h-6"></i>
+                    </div>
+                    <span class="font-semibold text-sm text-slate-700">Layanan Keluhan</span>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition cursor-pointer flex flex-col items-center border border-slate-100" data-target="pageMind">
-                    <span class="text-4xl mb-3">🧠</span>
-                    <span class="font-semibold text-sm">Cek Kesehatan Jiwa</span>
+                <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition cursor-pointer flex flex-col items-center border border-slate-100 group" data-target="pageMind">
+                    <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mb-3 group-hover:bg-green-100 transition">
+                        <i data-lucide="brain" class="text-green-600 w-6 h-6"></i>
+                    </div>
+                    <span class="font-semibold text-sm text-slate-700">Cek Kesehatan Jiwa</span>
                 </div>
             </div>
 
-            <button class="w-full bg-red-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-red-700 flex items-center justify-center gap-2 animate-pulse" data-target="pageSos">
-                <span>🚨</span> SOS DARURAT
+            <button class="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-5 rounded-xl font-bold text-lg shadow-lg hover:shadow-red-200 hover:scale-[1.02] transition transform flex items-center justify-center gap-3 group" data-target="pageSos">
+                <div class="relative">
+                    <i data-lucide="siren" class="w-6 h-6 animate-pulse"></i>
+                </div>
+                <span>SOS DARURAT</span>
             </button>
-
-            <div class="mt-12 text-center opacity-50 text-xs">
-                <img src="https://images.seeklogo.com/logo-png/30/1/bpjs-kesehatan-logo-png_seeklogo-306177.png" class="h-14 mx-auto mb-2">
-                <p>© 2025 BPJS Kesehatan</p>
+            
+            <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <h3 class="font-bold text-blue-800 text-sm mb-2 flex items-center gap-2">
+                    <i data-lucide="info" class="w-4 h-4"></i> Info Terkini
+                </h3>
+                <p class="text-xs text-slate-600">Layanan AURA tersedia 24/7 untuk membantu kondisi darurat psikologis Anda.</p>
             </div>
         </section>
 
         <section class="page hidden" id="pageKeluhan">
-            <button class="text-blue-600 font-semibold mb-4 flex items-center gap-1" data-target="pageMain">← Kembali</button>
+            <button class="text-blue-600 font-semibold mb-4 flex items-center gap-1 text-sm hover:underline" data-target="pageDashboard">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali
+            </button>
             <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold">Sampaikan Keluhan</h2>
-                    <span id="cxStatus" class="text-xs px-2 py-1 bg-slate-100 rounded text-slate-500">Normal</span>
+                <div class="flex justify-between items-center mb-4 border-b pb-4">
+                    <h2 class="text-lg font-bold text-slate-800">Sampaikan Keluhan</h2>
+                    <span id="cxStatus" class="text-xs px-2 py-1 bg-slate-100 rounded text-slate-500 font-medium">Normal</span>
                 </div>
                 
-                <div id="adaptiveUiNotice" class="hidden bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4 text-sm text-yellow-700">
+                <div id="adaptiveUiNotice" class="hidden bg-amber-50 border-l-4 border-amber-400 p-3 mb-4 text-sm text-amber-800 animate-fade-in">
                     <strong>Mode Sederhana Aktif:</strong> Kami menyederhanakan tampilan untuk kenyamanan Anda.
                 </div>
 
-                <textarea id="complaintForm" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-base mb-4" rows="6" placeholder="Ceritakan kendala Anda..."></textarea>
+                <textarea id="complaintForm" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-base mb-4 resize-none" rows="6" placeholder="Ceritakan kendala yang Anda alami secara detail..."></textarea>
                 
-                <button id="submitComplaintButton" class="w-full bg-blue-800 text-white py-3 rounded-lg font-bold hover:bg-blue-900 transition">
-                    Kirim ke Layanan Pelanggan
+                <button id="submitComplaintButton" class="w-full bg-blue-800 text-white py-3 rounded-lg font-bold hover:bg-blue-900 transition flex justify-center items-center gap-2">
+                    <span>Kirim Keluhan</span>
+                    <i data-lucide="send" class="w-4 h-4"></i>
                 </button>
             </div>
         </section>
 
         <section class="page hidden" id="pageMind">
-            <button class="text-blue-600 font-semibold mb-4 flex items-center gap-1" data-target="pageMain">← Kembali</button>
+            <button class="text-blue-600 font-semibold mb-4 flex items-center gap-1 text-sm hover:underline" data-target="pageDashboard">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali
+            </button>
             <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
-                <h2 class="text-lg font-bold mb-4 border-b pb-2">AURA-Mind</h2>
+                <h2 class="text-lg font-bold mb-6 border-b pb-2 flex items-center gap-2 text-slate-800">
+                    <i data-lucide="activity" class="w-5 h-5 text-blue-600"></i>
+                    AURA-Mind
+                </h2>
                 
                 <div id="mindStep1">
                     <div class="text-center py-8">
-                        <p class="text-lg text-slate-600 mb-6">Anda akan menjawab <strong>beberapa pertanyaan psikologis singkat</strong> untuk membantu kami memahami kondisi Anda.</p>
-                        <button id="startScreeningButton" class="bg-blue-600 text-white px-8 py-3 rounded-full font-bold shadow hover:bg-blue-700">Mulai Skrining</button>
-                        <div id="mindLoading" class="hidden mt-4 text-slate-400 text-sm">Sedang memuat pertanyaan...</div>
+                        <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i data-lucide="clipboard-list" class="w-10 h-10 text-blue-600"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-2">Skrining Kesehatan Mental</h3>
+                        <p class="text-sm text-slate-500 mb-8 leading-relaxed">Anda akan menjawab <strong>beberapa pertanyaan singkat</strong> yang dipersonalisasi oleh AI untuk memahami kondisi psikologis Anda saat ini.</p>
+                        
+                        <button id="startScreeningButton" class="w-full bg-blue-600 text-white px-8 py-3.5 rounded-lg font-bold shadow hover:bg-blue-700 transition transform hover:scale-[1.02]">
+                            Mulai Skrining
+                        </button>
+                        
+                        <div id="mindLoading" class="hidden flex flex-col items-center mt-6">
+                            <div class="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-2"></div>
+                            <span class="text-xs text-slate-400">AI sedang menyusun pertanyaan...</span>
+                        </div>
                     </div>
                 </div>
 
-                <div id="mindStep2" class="hidden space-y-4">
+                <div id="mindStep2" class="hidden space-y-6">
                     <div id="mindQuestionsContainer" class="space-y-6"></div>
-                    <button id="submitScreeningButton" class="w-full bg-blue-800 text-white py-3 rounded-lg font-bold mt-6">Analisis Jawaban Saya</button>
+                    <button id="submitScreeningButton" class="w-full bg-blue-800 text-white py-3.5 rounded-lg font-bold mt-8 shadow hover:bg-blue-900 transition">
+                        Analisis Jawaban Saya
+                    </button>
                 </div>
 
                 <div id="mindStep3" class="hidden">
-                    <div id="mindResultContainer" class="prose prose-sm max-w-none text-slate-700"></div>
-                    <button id="downloadPdfButton" class="w-full border-2 border-blue-800 text-blue-800 py-3 rounded-lg font-bold mt-6 hover:bg-blue-50">
-                        📄 Download Hasil (PDF)
+                    <div id="mindResultContainer" class="prose prose-sm max-w-none text-slate-700 bg-slate-50 p-5 rounded-xl border border-slate-200"></div>
+                    <button id="downloadPdfButton" class="w-full border border-blue-200 bg-white text-blue-800 py-3 rounded-lg font-bold mt-6 hover:bg-blue-50 flex justify-center items-center gap-2 transition">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        Download Laporan (PDF)
                     </button>
                 </div>
             </div>
@@ -110,43 +160,101 @@
 
     </main>
 
-    <div id="cxModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all scale-95 opacity-0" id="cxModalContent">
-            <div class="bg-blue-800 p-4 text-white flex items-center gap-3">
+    <div id="cxModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all scale-95 opacity-0" id="cxModalContent">
+            <div class="bg-gradient-to-r from-blue-800 to-blue-700 p-5 text-white flex items-center gap-3">
                 <div id="cxIconLoading" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                <h3 class="font-bold" id="cxModalTitle">Menghubungkan...</h3>
+                <h3 class="font-bold text-lg" id="cxModalTitle">Menghubungkan...</h3>
             </div>
             <div class="p-6 space-y-4">
-                <div id="cxModalText" class="text-slate-700"></div>
+                <div id="cxModalText" class="text-slate-700 leading-relaxed"></div>
             </div>
-            <div class="p-4 bg-slate-50 text-right">
-                <button id="cxModalClose" class="text-blue-800 font-bold px-4 py-2 hover:bg-blue-100 rounded">Tutup</button>
+            <div class="p-4 bg-slate-50 text-right border-t border-slate-100">
+                <button id="cxModalClose" class="text-blue-700 font-bold px-5 py-2 hover:bg-blue-100 rounded-lg transition">Tutup</button>
             </div>
         </div>
     </div>
 
-    <div id="sosOverlay" class="fixed inset-0 bg-red-600 z-[60] hidden flex flex-col items-center justify-center text-white p-6 text-center">
-        <h1 class="text-5xl font-black animate-pulse mb-2">SOS AKTIF</h1>
-        <p id="sosStatus" class="text-xl opacity-90 mb-8">Mendeteksi Kedaruratan...</p>
+    <div id="sosOverlay" class="fixed inset-0 bg-red-600 z-[60] hidden flex flex-col items-center justify-center text-white p-6 text-center transition-all duration-300">
         
-        <canvas id="audioVisualizer" class="w-full h-32 bg-black/20 rounded-xl mb-8"></canvas>
+        <div class="mb-6 relative">
+            <div class="absolute -inset-4 bg-red-500 rounded-full animate-ping opacity-20"></div>
+            <h1 class="text-5xl font-black relative z-10 drop-shadow-md tracking-tighter">SOS</h1>
+        </div>
         
-        <div id="sosResultArea" class="hidden w-full max-w-sm bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/20">
-            <div class="bg-red-800 rounded-lg p-3 mb-4 animate-pulse">
-                <p class="font-bold text-sm">AMBULANS DIKIRIM KE:</p>
-                <p id="gpsLocation" class="font-mono text-xs mt-1">Mencari GPS...</p>
+        <p id="sosStatus" class="text-xl font-bold mb-6 tracking-wide animate-pulse">MENDETEKSI SUARA...</p>
+        
+        <div id="sosVisualizerContainer" class="w-full max-w-xs mb-4 flex flex-col items-center">
+            <canvas id="audioVisualizer" class="w-full h-24 bg-black/20 rounded-xl backdrop-blur-sm border border-white/10 mb-2"></canvas>
+            <div class="w-full bg-red-800 h-1 rounded-full overflow-hidden">
+                <div id="sosTimerBar" class="bg-white h-full w-full origin-left transition-transform duration-[3000ms] ease-linear"></div>
             </div>
-            <p class="font-black text-2xl mb-4">TETAP TENANG.</p>
+        </div>
+
+        <button id="silentSosButton" class="mb-6 bg-white text-red-600 px-6 py-3 rounded-full font-bold text-sm shadow-lg hover:bg-red-50 transition transform hover:scale-105 flex items-center gap-2">
+            <i data-lucide="map-pin" class="w-4 h-4"></i>
+            SAYA TIDAK BISA BICARA (KIRIM LOKASI)
+        </button>
+        
+        <div id="sosProcessList" class="w-full max-w-xs text-left space-y-3 hidden mb-6 bg-red-700/30 p-4 rounded-xl backdrop-blur-sm">
+            <div class="flex items-center gap-3 opacity-50 transition-all duration-500" id="step1">
+                <div class="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold shrink-0">1</div>
+                <span class="text-sm font-medium">Aktivasi Darurat</span>
+            </div>
+            <div class="flex items-center gap-3 opacity-50 transition-all duration-500" id="step2">
+                <div class="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold shrink-0">2</div>
+                <span class="text-sm font-medium">Mengunci Koordinat GPS</span>
+            </div>
+            <div class="flex items-center gap-3 opacity-50 transition-all duration-500" id="step3">
+                <div class="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold shrink-0">3</div>
+                <span class="text-sm font-medium">Menghubungi Server 119</span>
+            </div>
+            <div class="flex items-center gap-3 opacity-50 transition-all duration-500" id="step4">
+                <div class="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold shrink-0">4</div>
+                <span class="text-sm font-medium">Dispatch Ambulans & Faskes</span>
+            </div>
+        </div>
+
+        <div id="sosResultArea" class="hidden w-full max-w-sm bg-white text-slate-900 rounded-xl p-0 overflow-hidden shadow-2xl animate-slide-up">
+            <div class="bg-red-100 p-4 border-b border-red-200 flex items-start gap-3">
+                <div class="bg-red-200 p-2 rounded-full">
+                    <i data-lucide="ambulance" class="w-6 h-6 text-red-600"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-red-700 text-lg">BANTUAN DIKIRIM</h3>
+                    <p class="text-xs text-red-600 mt-1 font-medium">Tetap tenang di lokasi Anda.</p>
+                </div>
+            </div>
             
-            <div class="text-left bg-white text-slate-900 rounded-lg p-4">
-                <p class="text-xs font-bold text-slate-500 mb-2">REKOMENDASI FASKES TERDEKAT:</p>
-                <ul id="faskesList" class="text-sm space-y-2 font-semibold">
-                    </ul>
+            <div class="p-5 space-y-4">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Lokasi Terkunci</p>
+                    <div class="flex items-center gap-2 bg-slate-100 p-3 rounded-lg border border-slate-200">
+                        <i data-lucide="crosshair" class="w-5 h-5 text-red-500"></i>
+                        <p id="gpsLocation" class="font-mono text-sm font-bold text-slate-800 tracking-tight">Mencari...</p>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Unit Respons Terdekat</p>
+                    <ul id="faskesList" class="text-sm space-y-2">
+                        </ul>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-slate-50 border-t border-slate-100">
+                <button id="sosCloseButton" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-lg transition flex items-center justify-center gap-2">
+                    <span>Tutup / Selesai</span>
+                </button>
             </div>
         </div>
-
-        <button id="sosCloseButton" class="mt-8 border border-white/50 text-white px-6 py-2 rounded-full hover:bg-white/20 hidden">Batalkan / Tutup</button>
+        
+        <button id="sosCancelButton" class="mt-4 text-white/70 text-sm underline hover:text-white">Batalkan</button>
     </div>
 
+    <script>
+        // Inisialisasi Ikon
+        lucide.createIcons();
+    </script>
 </body>
 </html>

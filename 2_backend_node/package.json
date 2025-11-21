@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "concurrently \"npm:run-node\" \"npm:run-python\" \"npm:run-frontend\" \"npm:run-tailwind\"",
-  "run-node": "node server.js",
-  "run-python": "cd ../3_backend_python && .\\venv\\Scripts\\activate && python app.py",
-  "run-frontend": "cd ../1_frontend && npx live-server --port=5500 --no-browser",
-  "run-tailwind": "cd ../1_frontend && npx tailwindcss -i ./src/input.css -o ./src/output.css --watch"
+    "run-node": "node server.js",
+    "run-python": "cd ../3_backend_python && .\\venv\\Scripts\\activate && python app.py",
+    "run-frontend": "cd ../1_frontend && npx live-server --port=5500 --no-browser",
+    "run-tailwind": "cd ../1_frontend && npx tailwindcss -i ./src/input.css -o ./src/output.css --watch"
   },
   "keywords": [],
   "author": "",
@@ -18,15 +18,15 @@
     "axios": "^1.13.2",
     "cors": "^2.8.5",
     "express": "^5.1.0",
-    "form-data": "^4.0.4",
+    "form-data": "^4.0.5",
     "multer": "^2.0.2",
     "node-fetch": "^2.7.0"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "node-fetch": "^2.7.0",
-    "concurrently": "^9.2.1",
-    "live-server": "^1.2.2"
+    "live-server": "^1.2.2",
+    "node-fetch": "^2.7.0"
   }
 }

@@ -134,5 +134,14 @@ def analyze_voice():
         if os.path.exists(temp_path): os.remove(temp_path)
         if 'wav_path' in locals() and os.path.exists(wav_path): os.remove(wav_path)
 
+@app.route('/', methods=['GET'])
+def health_check():
+    return jsonify({
+        "status": "online",
+        "message": "AURA AI Microservice (Python) is Ready!",
+        "service": "Gemini + Librosa"
+    })
+#----Health Check Route ---
+
 if __name__ == '__main__':
     app.run(port=5001)
